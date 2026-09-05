@@ -172,12 +172,13 @@ with st.container():
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 6. INTEGRASI AGEN AI BERBASIS TAB
+# 6. INTEGRASI AGEN AI BERBASIS TAB (DENGAN TAB RISET DITAMBAHKAN)
 # ---------------------------------------------------------
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📝 Copywriting & WA", 
     "🚀 Marketing Strategy", 
     "🔍 SEO Marketplace", 
+    "📊 Riset & Rekomendasi",
     "💬 CS & FAQ", 
     "🎨 Visual Prompt"
 ])
@@ -278,9 +279,57 @@ with tab3:
         st.subheader("🔑 Kata Kunci Utama")
         st.write(", ".join(res.get("keywords", [])))
 
-# --- TAB 4: CS & FAQ ---
+# --- TAB 4: RISET & REKOMENDASI PRODUK (BARU) ---
 with tab4:
-    if st.button("❓ Execute CS Agent", key="btn_tab4", type="primary"):
+    if st.button("📊 Execute Product Research Agent", key="btn_tab4", type="primary"):
+        if not prod_name:
+            st.error("Nama produk wajib diisi!")
+        else:
+            with st.spinner("Agent melakukan analisis riset pasar & potensi produk..."):
+                try:
+                    sys_p = "Kamu adalah Konsultan Riset Pasar & Product Strategist E-Commerce senior. Merespon HANYA dalam format JSON valid."
+                    usr_p = f"""
+                    Produk: {prod_name}, Kategori: {prod_category}, Harga: Rp {prod_price}, Keunggulan: {prod_features}.
+                    Lakukan analisis mendalam dan berikan respon JSON dengan struktur:
+                    {{
+                        "target_audience": "Profil pembeli ideal (demografi, kebiasaan, pain points)",
+                        "usp": "Unique Selling Proposition utama yang membedakan dari pesaing",
+                        "market_potential": "Analisis potensi pasar dan posisi harga (apakah murah, mid-tier, atau premium)",
+                        "competitor_analysis": "Tantangan persaingan pasar saat ini",
+                        "product_recommendations": ["Rekomendasi ide varian/bundling 1", "Rekomendasi ide varian/bundling 2", "Rekomendasi ide varian/bundling 3"]
+                    }}
+                    """
+                    st.session_state["res_research"] = call_openrouter(sys_p, usr_p)
+                    st.success("Riset Berhasil!")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    if "res_research" in st.session_state:
+        res = st.session_state["res_research"]
+        
+        col_res1, col_res2 = st.columns(2)
+        with col_res1:
+            st.subheader("🎯 Target Pembeli Ideal")
+            st.info(res.get("target_audience", ""))
+            
+            st.subheader("💡 Unique Selling Proposition (USP)")
+            st.success(res.get("usp", ""))
+
+        with col_res2:
+            st.subheader("📈 Analisis Potensi Pasar & Harga")
+            st.write(res.get("market_potential", ""))
+            
+            st.subheader("⚔️ Analisis Persaingan Pasar")
+            st.warning(res.get("competitor_analysis", ""))
+
+        st.divider()
+        st.subheader("🎁 Rekomendasi Pengembangan / Bundling Produk")
+        for rec in res.get("product_recommendations", []):
+            st.write(f"✨ {rec}")
+
+# --- TAB 5: CS & FAQ ---
+with tab5:
+    if st.button("❓ Execute CS Agent", key="btn_tab5", type="primary"):
         if not prod_name:
             st.error("Nama produk wajib diisi!")
         else:
@@ -310,9 +359,9 @@ with tab4:
             with st.expander(f"Q: {item.get('tanya')}"):
                 st.write(item.get("jawab"))
 
-# --- TAB 5: VISUAL PROMPT ---
-with tab5:
-    if st.button("🎨 Execute Visual Agent", key="btn_tab5", type="primary"):
+# --- TAB 6: VISUAL PROMPT ---
+with tab6:
+    if st.button("🎨 Execute Visual Agent", key="btn_tab6", type="primary"):
         if not prod_name:
             st.error("Nama produk wajib diisi!")
         else:
