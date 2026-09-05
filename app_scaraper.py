@@ -1,122 +1,132 @@
-import os
-os.environ["ANONYMIZED_TELEMETRY"] = "False"  # Mencegah error telemetry Streamlit
-
 import streamlit as st
 from openai import OpenAI
+import json
+import urllib.parse
 
-# Konfigurasi Halaman Streamlit
+# ---------------------------------------------------------
+# 1. KONFIGURASI HALAMAN STREAMLIT
+# ---------------------------------------------------------
 st.set_page_config(
-    page_title="CyberIntel Enterprise SaaS",
-    page_icon="🛡️",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="SaaS AI Toko Online",
+    page_icon="🛍️",
+    layout="wide"
 )
 
-# Custom CSS untuk tampilan Cyber/SaaS yang elegan
-st.markdown("""
-    <style>
-    .main {
-        background-color: #0e1117;
-        color: #ffffff;
-    }
-    .stButton>button {
-        width: 100%;
-        background-color: #ff4b4b;
-        color: white;
-        font-weight: bold;
-        border-radius: 6px;
-    }
-    .stButton>button:hover {
-        background-color: #ff2121;
-    }
-    .sidebar .sidebar-content {
-        background-color: #16192b;
-    }
-    </style>
-""", unsafe_allow_html=True)
+st.title("🛍️ SaaS AI Toko Online (Lightweight)")
+st.caption("Generator deskripsi produk, hashtag, dan integrasi checkout WhatsApp otomatis.")
 
-# Inisialisasi Session State untuk Riwayat & Autentikasi Simulasi
-if "history" not in st.session_state:
-    st.session_state.history = []
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = True  # Default login otomatis untuk kemudahan uji coba
+# ---------------------------------------------------------
+# 2. PENANGANAN API KEY (LOKAL & STREAMLIT CLOUD SAFE)
+# ---------------------------------------------------------
+api_key = None
 
-# --- SIDEBAR: NAVIGASI & KONTROL ---
+# Cek apakah ada API key dari st.secrets (Streamlit Cloud / secrets.toml)
+try:
+    if "OPENAI_API_KEY" in st.secrets:
+        api_key = st.secrets["OPENAI_API_KEY"]
+except Exception:
+    pass
+
+# Jika tidak ada di secrets, sediakan input manual di Sidebar
 with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/cyber-security.png", width=80)
-    st.title("CyberIntel Ops")
-    st.markdown("---")
+    st.header("⚙️ Pengaturan Toko")
+    store_name = st.text_input("Nama Toko", value="Sri Store")
+    wa_number = st.text_input("Nomor WhatsApp Toko", value="6281234567890", help="Gunakan kode negara (contoh: 628...)")
     
-    st.subheader("🔑 Konfigurasi API")
-    openrouter_api_key = st.text_input("OpenRouter API Key", type="password", placeholder="sk-or-v1-...")
-    
-    st.markdown("---")
-    st.subheader("📂 Arsip Investigasi")
-    if st.session_state.history:
-        for idx, item in enumerate(st.session_state.history):
-            if st.button(f"🔍 {item['topic'][:25]}...", key=f"hist_{idx}"):
-                st.info(f"Menampilkan arsip: {item['topic']}")
+    st.divider()
+    if not api_key:
+        api_key = st.text_input("OpenAI API Key", type="password", help="Masukkan API Key OpenAI Anda")
+
+if not api_key:
+    st.warning("⚠️ Silakan masukkan OpenAI API Key di sidebar atau atur melalui secrets.toml untuk menggunakan fitur AI.")
+    st.stop()
+
+# Inisialisasi Klien OpenAI
+client = OpenAI(api_key=api_key)
+
+# ---------------------------------------------------------
+# 3. FORM INPUT PRODUK
+# ---------------------------------------------------------
+col1, col2 = st.columns(2)
+
+with col1:
+    prod_name = st.text_input("Nama Produk", placeholder="Contoh: Gamis Rayon Premium")
+    prod_price = st.number_input("Harga Produk (Rp)", min_value=0, value=150000, step=5000)
+
+with col2:
+    prod_category = st.selectbox("Kategori", ["Fashion", "Kecantikan", "Elektronik", "Makanan/Minuman", "Lainnya"])
+    prod_features = st.text_area("Fitur / Keunggulan Utama", placeholder="Contoh: Bahan adem, tidak menerawang, ada resleting depan")
+
+st.divider()
+
+# ---------------------------------------------------------
+# 4. PROSES GENERASI KONTEN AI
+# ---------------------------------------------------------
+if st.button("✨ Hasilkan Konten Toko via AI", type="primary"):
+    if not prod_name:
+        st.error("Nama produk wajib diisi!")
     else:
-        st.caption("Belum ada riwayat investigasi.")
+        with st.spinner("AI sedang merancang deskripsi dan materi promosi..."):
+            prompt = f"""
+            Kamu adalah ahli pemasaran e-commerce profesional.
+            Buatkan materi penjualan untuk produk berikut:
+            - Nama Produk: {prod_name}
+            - Kategori: {prod_category}
+            - Keunggulan: {prod_features}
 
-# --- HALAMAN UTAMA: COMMAND CENTER ---
-st.title("🛡️ CyberIntel Enterprise SaaS")
-st.markdown("### Platform Intelijen Siber Multi-Agen Berbasis AI Otonom")
-st.markdown("---")
+            Kembalikan jawaban DALAM FORMAT JSON VALID dengan struktur kunci berikut:
+            {{
+                "deskripsi": "Deskripsi persuasif 2 paragraf yang siap pakai di toko online",
+                "keunggulan": ["poin keunggulan 1", "poin keunggulan 2", "poin keunggulan 3"],
+                "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"]
+            }}
+            """
 
-# Form Input Utama
-with st.form("intel_form"):
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        target_topic = st.text_input("Target Investigasi / Topik Siber:", placeholder="Contoh: Analisis kerentanan zero-day pada server enterprise atau kebocoran data.")
-    with col2:
-        agent_mode = st.selectbox("Mode Agen:", ["Multi-Agent (CrewAI)", "Quick LLM (Hermes/OpenAI)"])
-    
-    submit_btn = st.form_submit_button("🚀 Jalankan Operasi Intelijen")
-
-# Logika Eksekusi saat tombol diklik
-if submit_btn:
-    if not target_topic:
-        st.warning("⚠️ Mohon masukkan target atau topik investigasi terlebih dahulu!")
-    elif not openrouter_api_key:
-        st.warning("⚠️ Mohon masukkan OpenRouter API Key kamu di sidebar!")
-    else:
-        with st.spinner("🔄 Sedang mengerahkan tim agen intelijen siber... Mohon tunggu..."):
             try:
-                # Inisialisasi Client OpenAI menggunakan OpenRouter Endpoint
-                client = OpenAI(
-                    base_url="https://openrouter.ai/api/v1",
-                    api_key=openrouter_api_key,
-                )
-                
-                # Simulasi/Eksekusi Permintaan ke LLM (OpenRouter)
                 response = client.chat.completions.create(
-                    model="anthropic/claude-3.5-sonnet",
+                    model="gpt-4o-mini",
+                    response_format={"type": "json_object"},
                     messages=[
-                        {"role": "system", "content": "Anda adalah analis intelijen siber senior. Buat laporan investigasi yang terstruktur, tajam, dan profesional dalam format Markdown."},
-                        {"role": "user", "content": f"Lakukan analisis intelijen mendalam mengenai: {target_topic}"}
+                        {"role": "system", "content": "Kamu adalah asisten e-commerce yang merespon hanya dalam format JSON."},
+                        {"role": "user", "content": prompt}
                     ]
                 )
-                
-                result_text = response.choices[0].message.content
-                
-                # Simpan ke Riwayat Session State
-                st.session_state.history.append({
-                    "topic": target_topic,
-                    "result": result_text
-                })
-                
-                st.success("✅ Operasi Intelijen Berhasil Diselesaikan!")
-                st.markdown("### 📋 Hasil Laporan Investigasi:")
-                st.markdown(result_text)
-                
-                # Tombol Download Laporan
-                st.download_button(
-                    label="📥 Unduh Laporan (Markdown)",
-                    data=result_text,
-                    file_name=f"CyberIntel_Report_{target_topic[:15].strip()}.md",
-                    mime="text/markdown"
-                )
-                
+
+                # Simpan hasil generasi ke session state agar tidak hilang saat di-click/refresh
+                result = json.loads(response.choices[0].message.content)
+                st.session_state["ai_result"] = result
+                st.success("Konten berhasil dibuat!")
+
             except Exception as e:
-                st.error(f"❌ Terjadi kesalahan saat menghubungi API: {e}")
+                st.error(f"Terjadi kesalahan saat memanggil OpenAI API: {e}")
+
+# ---------------------------------------------------------
+# 5. MENAMPILKAN HASIL & TAUTAN CHECKOUT WHATSAPP
+# ---------------------------------------------------------
+if "ai_result" in st.session_state:
+    res = st.session_state["ai_result"]
+    
+    st.subheader("📝 Deskripsi Penjualan")
+    st.write(res.get("deskripsi", ""))
+
+    st.subheader("💡 Keunggulan Utama")
+    for point in res.get("keunggulan", []):
+        st.write(f"• {point}")
+
+    st.subheader("🏷️ Rekomendasi Hashtag")
+    st.write(" ".join(res.get("hashtags", [])))
+
+    st.divider()
+
+    # Generator Link Checkout WhatsApp
+    wa_message = f"Halo {store_name}, saya mau pesan produk berikut:\n\n*Nama Produk:* {prod_name}\n*Harga:* Rp {prod_price:,}\n\nApakah stok masih tersedia?"
+    wa_url = f"https://wa.me/{wa_number}?text={urllib.parse.quote(wa_message)}"
+
+    st.subheader("📲 Tes Transaksi")
+    st.markdown(
+        f'<a href="{wa_url}" target="_blank">'
+        f'<button style="background-color:#25D366; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold;">'
+        f'Pesan via WhatsApp'
+        f'</button></a>',
+        unsafe_allow_html=True
+    )
