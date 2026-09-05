@@ -13,17 +13,19 @@ st.set_page_config(
 )
 
 st.title("🛍️ SaaS AI Toko Online (Multi-Model AI)")
-st.caption("Gunakan berbagai pilihan model AI (DeepSeek, Llama 3, Claude, Gemini, Qwen, Hermes) via OpenRouter.")
+st.caption("Gunakan berbagai pilihan model AI (DeepSeek V3/R1, Llama 3, Claude, Gemini, Qwen, Hermes) via OpenRouter.")
 
 # ---------------------------------------------------------
 # 2. DAFTAR MODEL OPENROUTER
 # ---------------------------------------------------------
 MODEL_OPTIONS = {
     "DeepSeek V3": "deepseek/deepseek-chat",
-    "DeepSeek R1 (Reasoning)": "deepseek/deepseek-r1",
+    "DeepSeek R1 (Reasoning Original)": "deepseek/deepseek-r1",
+    "DeepSeek R1 Distill (Llama 70B)": "deepseek/deepseek-r1-distill-llama-70b",
+    "DeepSeek R1 Distill (Qwen 32B)": "deepseek/deepseek-r1-distill-qwen-32b",
     "Llama 3.3 (70B)": "meta-llama/llama-3.3-70b-instruct",
     "Qwen 2.5 (72B)": "qwen/qwen-2.5-72b-instruct",
-    "Hermes 3 (Llama 3.1 408B)": "nousresearch/hermes-3-llama-3.1-408b",
+    "Hermes 3 (Llama 3.1 405B)": "nousresearch/hermes-3-llama-3.1-405b",
     "Gemini Flash 1.5": "google/gemini-flash-1.5",
     "Claude 3.5 Haiku": "anthropic/claude-3.5-haiku"
 }
