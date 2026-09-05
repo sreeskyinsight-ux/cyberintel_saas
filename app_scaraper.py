@@ -7,13 +7,13 @@ import urllib.parse
 # 1. KONFIGURASI HALAMAN
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="SaaS AI Toko Online Multi-Model",
+    page_title="SaaS AI Toko Online - Super Agent Ecosystem",
     page_icon="🛍️",
     layout="wide"
 )
 
-st.title("🛍️ SaaS AI Toko Online (Multi-Model AI)")
-st.caption("Gunakan berbagai pilihan model AI (DeepSeek V3/R1, Llama 3, Claude, Gemini, Qwen, Hermes) via OpenRouter.")
+st.title("🛍️ SaaS AI Toko Online (Multi-Agent Multi-Model)")
+st.caption("Solusi e-commerce lengkap: Copywriting, SEO Marketplace, Strategi Promosi, FAQ, dan Visual Prompt via OpenRouter.")
 
 # ---------------------------------------------------------
 # 2. DAFTAR MODEL OPENROUTER
@@ -31,7 +31,7 @@ MODEL_OPTIONS = {
 }
 
 # ---------------------------------------------------------
-# 3. PENANGANAN API KEY & MODEL SELECTOR IN SIDEBAR
+# 3. PENANGANAN API KEY & MODEL SELECTOR
 # ---------------------------------------------------------
 api_key = None
 
@@ -58,14 +58,13 @@ if not api_key:
     st.warning("⚠️ Silakan masukkan OpenRouter API Key di sidebar atau atur via secrets.toml.")
     st.stop()
 
-# Inisialisasi Client OpenRouter
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=api_key
 )
 
 # ---------------------------------------------------------
-# 4. FORM INPUT PRODUK
+# 4. FORM INPUT UTAMA PRODUK
 # ---------------------------------------------------------
 col1, col2 = st.columns(2)
 
@@ -75,83 +74,32 @@ with col1:
 
 with col2:
     prod_category = st.selectbox("Kategori", ["Fashion", "Kecantikan", "Elektronik", "Makanan/Minuman", "Lainnya"])
-    prod_features = st.text_area("Fitur / Keunggulan Utama", placeholder="Contoh: Bahan adem, resleting depan")
+    prod_features = st.text_area("Fitur / Keunggulan Utama", placeholder="Contoh: Bahan adem, tidak menerawang, resleting depan")
 
 st.divider()
 
 # ---------------------------------------------------------
-# 5. PROSES GENERASI KONTEN AI
+# 5. INTEGRASI AGEN AI BERBASIS TAB
 # ---------------------------------------------------------
-if st.button(f"✨ Hasilkan Konten via {selected_model_name}", type="primary"):
-    if not prod_name:
-        st.error("Nama produk wajib diisi!")
-    else:
-        with st.spinner(f"Memproses data menggunakan {selected_model_name}..."):
-            prompt = f"""
-            Kamu adalah ahli pemasaran e-commerce.
-            Buatkan materi penjualan untuk produk berikut:
-            - Nama Produk: {prod_name}
-            - Kategori: {prod_category}
-            - Keunggulan: {prod_features}
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📝 Copywriting & WA", 
+    "📈 Strategi Promosi", 
+    "🔍 SEO Marketplace", 
+    "❓ CS & FAQ", 
+    "🎨 Visual Prompt"
+])
 
-            PENTING: Kembalikan jawaban HANYA DALAM FORMAT JSON VALID tanpa teks pembuat/markdown tambahan dengan struktur:
-            {{
-                "deskripsi": "Deskripsi persuasif 2 paragraf yang siap pakai",
-                "keunggulan": ["poin 1", "poin 2", "poin 3"],
-                "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"]
-            }}
-            """
-
-            try:
-                response = client.chat.completions.create(
-                    model=selected_model_id,
-                    messages=[
-                        {"role": "system", "content": "Kamu adalah asisten e-commerce yang merespon hanya dalam format JSON valid."},
-                        {"role": "user", "content": prompt}
-                    ]
-                )
-
-                raw_content = response.choices[0].message.content.strip()
-                
-                # Pembersihan teks jika AI menyertakan penanda ```json
-                if raw_content.startswith("```json"):
-                    raw_content = raw_content.replace("```json", "", 1).rstrip("```").strip()
-                elif raw_content.startswith("```"):
-                    raw_content = raw_content.replace("```", "", 1).rstrip("```").strip()
-
-                result = json.loads(raw_content)
-                st.session_state["ai_result"] = result
-                st.success(f"Konten berhasil dibuat oleh {selected_model_name}!")
-
-            except Exception as e:
-                st.error(f"Terjadi kesalahan pada {selected_model_name}: {e}")
-
-# ---------------------------------------------------------
-# 6. HASIL & CHECKOUT WHATSAPP
-# ---------------------------------------------------------
-if "ai_result" in st.session_state:
-    res = st.session_state["ai_result"]
-    
-    st.subheader("📝 Deskripsi Penjualan")
-    st.write(res.get("deskripsi", ""))
-
-    st.subheader("💡 Keunggulan Utama")
-    for point in res.get("keunggulan", []):
-        st.write(f"• {point}")
-
-    st.subheader("🏷️ Rekomendasi Hashtag")
-    st.write(" ".join(res.get("hashtags", [])))
-
-    st.divider()
-
-    wa_message = f"Halo {store_name}, saya mau pesan produk berikut:\n\n*Nama Produk:* {prod_name}\n*Harga:* Rp {prod_price:,}\n\nApakah stok masih tersedia?"
-    wa_url = f"[https://wa.me/](https://wa.me/){wa_number}?text={urllib.parse.quote(wa_message)}"
-
-    st.subheader("📲 Tes Transaksi")
-    st.markdown(
-        f'<a href="{wa_url}" target="_blank">'
-        f'<button style="background-color:#25D366; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold;">'
-        f'Pesan via WhatsApp'
-        f'</button></a>',
-        unsafe_allow_html=True
+# Helper function untuk request AI
+def call_openrouter(system_prompt, user_prompt):
+    response = client.chat.completions.create(
+        model=selected_model_id,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
     )
+    raw = response.choices[0].message.content.strip()
+    if raw.startswith("```json"):
+        raw = raw.replace("```json", "", 1).rstrip("```").strip()
+    elif raw.startswith("```"):
+        raw = raw.replace("
