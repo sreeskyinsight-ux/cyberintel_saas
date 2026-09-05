@@ -4,48 +4,66 @@ import json
 import urllib.parse
 
 # ---------------------------------------------------------
-# 1. KONFIGURASI HALAMAN STREAMLIT
+# 1. KONFIGURASI HALAMAN
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="SaaS AI Toko Online",
+    page_title="SaaS AI Toko Online Multi-Model",
     page_icon="🛍️",
     layout="wide"
 )
 
-st.title("🛍️ SaaS AI Toko Online (Lightweight)")
-st.caption("Generator deskripsi produk, hashtag, dan integrasi checkout WhatsApp otomatis.")
+st.title("🛍️ SaaS AI Toko Online (Multi-Model AI)")
+st.caption("Gunakan berbagai pilihan model AI (DeepSeek, Llama 3, Claude, Gemini, Qwen, Hermes) via OpenRouter.")
 
 # ---------------------------------------------------------
-# 2. PENANGANAN API KEY (LOKAL & STREAMLIT CLOUD SAFE)
+# 2. DAFTAR MODEL OPENROUTER
+# ---------------------------------------------------------
+MODEL_OPTIONS = {
+    "DeepSeek V3": "deepseek/deepseek-chat",
+    "DeepSeek R1 (Reasoning)": "deepseek/deepseek-r1",
+    "Llama 3.3 (70B)": "meta-llama/llama-3.3-70b-instruct",
+    "Qwen 2.5 (72B)": "qwen/qwen-2.5-72b-instruct",
+    "Hermes 3 (Llama 3.1 408B)": "nousresearch/hermes-3-llama-3.1-408b",
+    "Gemini Flash 1.5": "google/gemini-flash-1.5",
+    "Claude 3.5 Haiku": "anthropic/claude-3.5-haiku"
+}
+
+# ---------------------------------------------------------
+# 3. PENANGANAN API KEY & MODEL SELECTOR IN SIDEBAR
 # ---------------------------------------------------------
 api_key = None
 
-# Cek apakah ada API key dari st.secrets (Streamlit Cloud / secrets.toml)
 try:
-    if "OPENAI_API_KEY" in st.secrets:
-        api_key = st.secrets["OPENAI_API_KEY"]
+    if "OPENROUTER_API_KEY" in st.secrets:
+        api_key = st.secrets["OPENROUTER_API_KEY"]
 except Exception:
     pass
 
-# Jika tidak ada di secrets, sediakan input manual di Sidebar
 with st.sidebar:
-    st.header("⚙️ Pengaturan Toko")
+    st.header("⚙️ Pengaturan Toko & AI")
     store_name = st.text_input("Nama Toko", value="Sri Store")
-    wa_number = st.text_input("Nomor WhatsApp Toko", value="6281234567890", help="Gunakan kode negara (contoh: 628...)")
+    wa_number = st.text_input("Nomor WhatsApp Toko", value="6281234567890")
+    
+    st.divider()
+    selected_model_name = st.selectbox("🤖 Pilih Model AI", list(MODEL_OPTIONS.keys()))
+    selected_model_id = MODEL_OPTIONS[selected_model_name]
     
     st.divider()
     if not api_key:
-        api_key = st.text_input("OpenAI API Key", type="password", help="Masukkan API Key OpenAI Anda")
+        api_key = st.text_input("OpenRouter API Key", type="password", help="Masukkan sk-or-v1-...")
 
 if not api_key:
-    st.warning("⚠️ Silakan masukkan OpenAI API Key di sidebar atau atur melalui secrets.toml untuk menggunakan fitur AI.")
+    st.warning("⚠️ Silakan masukkan OpenRouter API Key di sidebar atau atur via secrets.toml.")
     st.stop()
 
-# Inisialisasi Klien OpenAI
-client = OpenAI(api_key=api_key)
+# Inisialisasi Client OpenRouter
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key
+)
 
 # ---------------------------------------------------------
-# 3. FORM INPUT PRODUK
+# 4. FORM INPUT PRODUK
 # ---------------------------------------------------------
 col1, col2 = st.columns(2)
 
@@ -55,53 +73,59 @@ with col1:
 
 with col2:
     prod_category = st.selectbox("Kategori", ["Fashion", "Kecantikan", "Elektronik", "Makanan/Minuman", "Lainnya"])
-    prod_features = st.text_area("Fitur / Keunggulan Utama", placeholder="Contoh: Bahan adem, tidak menerawang, ada resleting depan")
+    prod_features = st.text_area("Fitur / Keunggulan Utama", placeholder="Contoh: Bahan adem, resleting depan")
 
 st.divider()
 
 # ---------------------------------------------------------
-# 4. PROSES GENERASI KONTEN AI
+# 5. PROSES GENERASI KONTEN AI
 # ---------------------------------------------------------
-if st.button("✨ Hasilkan Konten Toko via AI", type="primary"):
+if st.button(f"✨ Hasilkan Konten via {selected_model_name}", type="primary"):
     if not prod_name:
         st.error("Nama produk wajib diisi!")
     else:
-        with st.spinner("AI sedang merancang deskripsi dan materi promosi..."):
+        with st.spinner(f"Memproses data menggunakan {selected_model_name}..."):
             prompt = f"""
-            Kamu adalah ahli pemasaran e-commerce profesional.
+            Kamu adalah ahli pemasaran e-commerce.
             Buatkan materi penjualan untuk produk berikut:
             - Nama Produk: {prod_name}
             - Kategori: {prod_category}
             - Keunggulan: {prod_features}
 
-            Kembalikan jawaban DALAM FORMAT JSON VALID dengan struktur kunci berikut:
+            PENTING: Kembalikan jawaban HANYA DALAM FORMAT JSON VALID tanpa teks pembuat/markdown tambahan dengan struktur:
             {{
-                "deskripsi": "Deskripsi persuasif 2 paragraf yang siap pakai di toko online",
-                "keunggulan": ["poin keunggulan 1", "poin keunggulan 2", "poin keunggulan 3"],
+                "deskripsi": "Deskripsi persuasif 2 paragraf yang siap pakai",
+                "keunggulan": ["poin 1", "poin 2", "poin 3"],
                 "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"]
             }}
             """
 
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    response_format={"type": "json_object"},
+                    model=selected_model_id,
                     messages=[
-                        {"role": "system", "content": "Kamu adalah asisten e-commerce yang merespon hanya dalam format JSON."},
+                        {"role": "system", "content": "Kamu adalah asisten e-commerce yang merespon hanya dalam format JSON valid."},
                         {"role": "user", "content": prompt}
                     ]
                 )
 
-                # Simpan hasil generasi ke session state agar tidak hilang saat di-click/refresh
-                result = json.loads(response.choices[0].message.content)
+                raw_content = response.choices[0].message.content.strip()
+                
+                # Pembersihan teks jika AI menyertakan penanda ```json
+                if raw_content.startswith("```json"):
+                    raw_content = raw_content.replace("```json", "", 1).rstrip("```").strip()
+                elif raw_content.startswith("```"):
+                    raw_content = raw_content.replace("```", "", 1).rstrip("```").strip()
+
+                result = json.loads(raw_content)
                 st.session_state["ai_result"] = result
-                st.success("Konten berhasil dibuat!")
+                st.success(f"Konten berhasil dibuat oleh {selected_model_name}!")
 
             except Exception as e:
-                st.error(f"Terjadi kesalahan saat memanggil OpenAI API: {e}")
+                st.error(f"Terjadi kesalahan pada {selected_model_name}: {e}")
 
 # ---------------------------------------------------------
-# 5. MENAMPILKAN HASIL & TAUTAN CHECKOUT WHATSAPP
+# 6. HASIL & CHECKOUT WHATSAPP
 # ---------------------------------------------------------
 if "ai_result" in st.session_state:
     res = st.session_state["ai_result"]
@@ -118,9 +142,8 @@ if "ai_result" in st.session_state:
 
     st.divider()
 
-    # Generator Link Checkout WhatsApp
     wa_message = f"Halo {store_name}, saya mau pesan produk berikut:\n\n*Nama Produk:* {prod_name}\n*Harga:* Rp {prod_price:,}\n\nApakah stok masih tersedia?"
-    wa_url = f"https://wa.me/{wa_number}?text={urllib.parse.quote(wa_message)}"
+    wa_url = f"[https://wa.me/](https://wa.me/){wa_number}?text={urllib.parse.quote(wa_message)}"
 
     st.subheader("📲 Tes Transaksi")
     st.markdown(
