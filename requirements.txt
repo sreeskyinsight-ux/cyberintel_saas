@@ -1,5 +1,2 @@
 streamlit
 crewai
-langchain-openai
-openai
-pydantic<2.10.0
