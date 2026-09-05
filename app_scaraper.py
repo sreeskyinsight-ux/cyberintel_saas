@@ -5,7 +5,7 @@ import urllib.parse
 import re
 
 # ---------------------------------------------------------
-# 1. KONFIGURASI HALAMAN & CUSTOM CSS FUTURISTIK SUPER KONTRAS
+# 1. KONFIGURASI HALAMAN & CUSTOM CSS SUPER KONTRAS
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="SaaS AI Toko Online - CyberSuite",
@@ -13,14 +13,21 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS Kustom dengan Prioritas !important
+# CSS Kustom: Memaksa Seluruh Teks, Label, Sidebar, & Tab Menjadi Terang & Kontras Tinggi
 st.markdown("""
 <style>
-    /* Background Utama & Warna Teks */
+    /* Background Utama & Teks Global */
     .stApp {
         background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%) !important;
-        color: #f8fafc !important;
+        color: #ffffff !important;
         font-family: 'Inter', sans-serif !important;
+    }
+
+    /* PAKSA SEMUA LABEL INPUT & TEKS BIASA TERANG & TEBAL */
+    label, p, span, div[data-testid="stWidgetLabel"] p {
+        color: #f8fafc !important;
+        font-weight: 700 !important;
+        font-size: 0.98rem !important;
     }
 
     /* Header Styling */
@@ -34,12 +41,49 @@ st.markdown("""
     }
     
     .sub-title {
-        color: #94a3b8 !important;
+        color: #cbd5e1 !important;
         font-size: 1.1rem;
         margin-bottom: 25px;
     }
 
-    /* FIX TOMBOL KONTRAS TINGGI - TEKS PUTIH BOLD */
+    /* KONTRASTING TAB MENU */
+    button[data-baseweb="tab"] {
+        background-color: transparent !important;
+        border-radius: 8px !important;
+        padding: 8px 16px !important;
+    }
+    
+    /* Tab Tidak Aktif: Teks Putih Keabuan Terang */
+    button[data-baseweb="tab"] p {
+        color: #e2e8f0 !important;
+        font-weight: 700 !important;
+        font-size: 1rem !important;
+    }
+
+    /* Tab Aktif: Background Cyan Menyala & Teks Cyan */
+    button[aria-selected="true"] {
+        background: rgba(56, 189, 248, 0.25) !important;
+        border-bottom: 3px solid #38bdf8 !important;
+    }
+    button[aria-selected="true"] p {
+        color: #38bdf8 !important;
+        font-weight: 800 !important;
+    }
+
+    /* KONTRASTING SIDEBAR */
+    section[data-testid="stSidebar"] {
+        background-color: #0b0f19 !important;
+        border-right: 1px solid #334155 !important;
+    }
+    section[data-testid="stSidebar"] label p, 
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3 {
+        color: #38bdf8 !important;
+        font-weight: 800 !important;
+    }
+
+    /* FIX TOMBOL BIASA (SECONDARY) */
     div.stButton > button {
         background-color: #1e293b !important;
         color: #ffffff !important;
@@ -59,7 +103,7 @@ st.markdown("""
         transform: translateY(-2px) !important;
     }
 
-    /* TOMBOL UTAMA (PRIMARY) UNGU-BIRU BERCAHAYA */
+    /* FIX TOMBOL UTAMA (PRIMARY) UNGU-BIRU BERCAHAYA */
     div.stButton > button[kind="primary"] {
         background: linear-gradient(90deg, #4f46e5, #9333ea) !important;
         color: #ffffff !important;
@@ -75,28 +119,8 @@ st.markdown("""
     }
 
     div.stButton > button p, div.stButton > button span {
-        color: inherit !important;
+        color: #ffffff !important;
         font-weight: 800 !important;
-    }
-
-    /* Tab Styling */
-    button[data-baseweb="tab"] {
-        background-color: transparent !important;
-        color: #cbd5e1 !important;
-        font-weight: 700 !important;
-        border-radius: 8px !important;
-    }
-    
-    button[aria-selected="true"] {
-        background: rgba(56, 189, 248, 0.15) !important;
-        color: #38bdf8 !important;
-        border-bottom: 3px solid #38bdf8 !important;
-    }
-
-    /* Sidebar Fix */
-    section[data-testid="stSidebar"] {
-        background-color: #0f172a !important;
-        border-right: 1px solid #334155 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -137,7 +161,6 @@ with st.sidebar:
     wa_number = st.text_input("Nomor WhatsApp Toko", value="6281234567890")
     
     st.divider()
-    # Menetapkan nama dan ID model AI yang dipilih
     selected_model_name = st.selectbox("🤖 Brain Model AI", list(MODEL_OPTIONS.keys()))
     selected_model_id = MODEL_OPTIONS[selected_model_name]
     
@@ -239,7 +262,6 @@ with tab1:
         wa_message = f"Halo {store_name}, saya mau pesan:\n\n*Nama Produk:* {prod_name}\n*Harga:* Rp {prod_price:,}\n\nApakah stok masih tersedia?"
         wa_url = f"https://wa.me/{wa_number}?text={urllib.parse.quote(wa_message)}"
         
-        # PERBAIKAN SINTAKS TRIPLE-QUOTES PADA TOMBOL WHATSAPP
         st.markdown(f"""<a href="{wa_url}" target="_blank"><button style="background: linear-gradient(90deg, #10b981, #059669); color:#ffffff !important; border:none; padding:12px 24px; border-radius:8px; cursor:pointer; font-weight:800; box-shadow: 0 0 15px rgba(16, 185, 129, 0.6); font-size: 1rem;">🚀 Checkout via WhatsApp</button></a>""", unsafe_allow_html=True)
 
 # --- TAB 2: MARKETING STRATEGY ---
