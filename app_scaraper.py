@@ -13,10 +13,10 @@ st.set_page_config(
     layout="wide"
 )
 
-# Injeksi CSS Futuristik dengan Kontras Tinggi (Prioritas !important)
+# CSS Kustom dengan Prioritas !important
 st.markdown("""
 <style>
-    /* Main Background & Text Color */
+    /* Background Utama & Warna Teks */
     .stApp {
         background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%) !important;
         color: #f8fafc !important;
@@ -39,7 +39,7 @@ st.markdown("""
         margin-bottom: 25px;
     }
 
-    /* FIX TOMBOL KONTRAS TINGGI - HURUF SANGAT TEBAL DAN KETARA */
+    /* FIX TOMBOL KONTRAS TINGGI - TEKS PUTIH BOLD */
     div.stButton > button {
         background-color: #1e293b !important;
         color: #ffffff !important;
@@ -59,7 +59,7 @@ st.markdown("""
         transform: translateY(-2px) !important;
     }
 
-    /* TOMBOL UTAMA (PRIMARY) BERCAHAYA UNGU-BIRU TEKS PUTIH */
+    /* TOMBOL UTAMA (PRIMARY) UNGU-BIRU BERCAHAYA */
     div.stButton > button[kind="primary"] {
         background: linear-gradient(90deg, #4f46e5, #9333ea) !important;
         color: #ffffff !important;
@@ -106,7 +106,7 @@ st.markdown('<h1 class="main-title">⚡ CyberCommerce AI Engine</h1>', unsafe_al
 st.markdown('<p class="sub-title">Generasi Ekosistem Pemasaran Toko Online Berbasis Multi-Agent AI</p>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. DAFTAR MODEL OPENROUTER (DENGAN SLUG PERBAIKAN REVISI)
+# 2. DAFTAR MODEL OPENROUTER VALID
 # ---------------------------------------------------------
 MODEL_OPTIONS = {
     "Hermes 3 (Llama 3.1 405B)": "nousresearch/hermes-3-llama-3.1-405b",
@@ -121,7 +121,7 @@ MODEL_OPTIONS = {
 }
 
 # ---------------------------------------------------------
-# 3. PENANGANAN API KEY & MODEL SELECTOR
+# 3. PENANGANAN API KEY & CONTROL PANEL SIDEBAR
 # ---------------------------------------------------------
 api_key = None
 
@@ -137,4 +137,105 @@ with st.sidebar:
     wa_number = st.text_input("Nomor WhatsApp Toko", value="6281234567890")
     
     st.divider()
-    selected_model_name
+    # Menetapkan nama dan ID model AI yang dipilih
+    selected_model_name = st.selectbox("🤖 Brain Model AI", list(MODEL_OPTIONS.keys()))
+    selected_model_id = MODEL_OPTIONS[selected_model_name]
+    
+    st.divider()
+    if not api_key:
+        api_key = st.text_input("OpenRouter API Key", type="password", help="Masukkan sk-or-v1-...")
+
+if not api_key:
+    st.warning("⚠️ Masukkan OpenRouter API Key di sidebar atau atur via secrets.toml.")
+    st.stop()
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key
+)
+
+# ---------------------------------------------------------
+# 4. HELPER FUNCTION UNTUK REQUEST AI
+# ---------------------------------------------------------
+def call_openrouter(system_prompt, user_prompt):
+    try:
+        response = client.chat.completions.create(
+            model=selected_model_id,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            timeout=30
+        )
+        raw = response.choices[0].message.content.strip()
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        clean_json = match.group(0) if match else raw
+        return json.loads(clean_json)
+    except Exception as e:
+        raise Exception(f"Koneksi gagal ke {selected_model_name}. Coba ganti model lain di sidebar. Detail: {e}")
+
+# ---------------------------------------------------------
+# 5. FORM INPUT UTAMA PRODUK
+# ---------------------------------------------------------
+with st.container():
+    col1, col2 = st.columns(2)
+
+    with col1:
+        prod_name = st.text_input("📦 Nama Produk", placeholder="Contoh: Gamis Rayon Premium")
+        prod_price = st.number_input("💎 Harga Produk (Rp)", min_value=0, value=150000, step=5000)
+
+    with col2:
+        prod_category = st.selectbox("🏷️ Kategori", ["Fashion", "Kecantikan", "Elektronik", "Makanan/Minuman", "Lainnya"])
+        prod_features = st.text_area("✨ Fitur / Keunggulan Utama", placeholder="Contoh: Bahan adem, resleting depan, tidak menerawang")
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# 6. INTEGRASI AGEN AI BERBASIS TAB
+# ---------------------------------------------------------
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📝 Copywriting & WA", 
+    "🚀 Marketing Strategy", 
+    "🔍 SEO Marketplace", 
+    "📊 Riset & Rekomendasi",
+    "💬 CS & FAQ", 
+    "🎨 Visual Prompt"
+])
+
+# --- TAB 1: COPYWRITING & CHECKOUT WA ---
+with tab1:
+    if st.button("✨ Execute Copywriting Agent", key="btn_tab1", type="primary"):
+        if not prod_name:
+            st.error("Nama produk wajib diisi!")
+        else:
+            with st.spinner("Agent memproses deskripsi & checkout link..."):
+                try:
+                    sys_p = "Kamu adalah ahli pemasaran e-commerce. Merespon HANYA dalam format JSON valid."
+                    usr_p = f"""
+                    Produk: {prod_name}, Kategori: {prod_category}, Fitur: {prod_features}.
+                    Format JSON:
+                    {{
+                        "deskripsi": "Deskripsi persuasif 2 paragraf",
+                        "keunggulan": ["poin 1", "poin 2", "poin 3"],
+                        "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"]
+                    }}
+                    """
+                    st.session_state["res_copy"] = call_openrouter(sys_p, usr_p)
+                    st.success("Berhasil!")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    if "res_copy" in st.session_state:
+        res = st.session_state["res_copy"]
+        st.subheader("📝 Deskripsi Penjualan")
+        st.write(res.get("deskripsi", ""))
+        st.subheader("💡 Keunggulan Utama")
+        for p in res.get("keunggulan", []):
+            st.write(f"• {p}")
+        st.subheader("🏷️ Rekomendasi Hashtag")
+        st.write(" ".join(res.get("hashtags", [])))
+        st.divider()
+        
+        wa_message = f"Halo {store_name}, saya mau pesan:\n\n*Nama Produk:* {prod_name}\n*Harga:* Rp {prod_price:,}\n\nApakah stok masih tersedia?"
+        wa_url = f"https://wa.me/{wa_number}?text={urllib.parse.quote(wa_message)}"
+        st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background: linear-gradient(90deg, #10b981, #059669); color:#ffffff !important; border:none; padding:12px 24px
