@@ -238,4 +238,172 @@ with tab1:
         
         wa_message = f"Halo {store_name}, saya mau pesan:\n\n*Nama Produk:* {prod_name}\n*Harga:* Rp {prod_price:,}\n\nApakah stok masih tersedia?"
         wa_url = f"https://wa.me/{wa_number}?text={urllib.parse.quote(wa_message)}"
-        st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background: linear-gradient(90deg, #10b981, #059669); color:#ffffff !important; border:none; padding:12px 24px
+        
+        # PERBAIKAN SINTAKS TRIPLE-QUOTES PADA TOMBOL WHATSAPP
+        st.markdown(f"""<a href="{wa_url}" target="_blank"><button style="background: linear-gradient(90deg, #10b981, #059669); color:#ffffff !important; border:none; padding:12px 24px; border-radius:8px; cursor:pointer; font-weight:800; box-shadow: 0 0 15px rgba(16, 185, 129, 0.6); font-size: 1rem;">🚀 Checkout via WhatsApp</button></a>""", unsafe_allow_html=True)
+
+# --- TAB 2: MARKETING STRATEGY ---
+with tab2:
+    if st.button("🚀 Execute Marketing Agent", key="btn_tab2", type="primary"):
+        if not prod_name:
+            st.error("Nama produk wajib diisi!")
+        else:
+            with st.spinner("Agent merancang video script & broadcast..."):
+                try:
+                    sys_p = "Kamu adalah pakar TikTok Marketing & WA Broadcast. Merespon HANYA dalam format JSON valid."
+                    usr_p = f"""
+                    Produk: {prod_name}, Kategori: {prod_category}, Keunggulan: {prod_features}.
+                    Format JSON:
+                    {{
+                        "script_tiktok": "Skrip video 15 detik (Hook, Body, CTA)",
+                        "broadcast_wa": "Pesan broadcast promo WA persuasif beserta emoji"
+                    }}
+                    """
+                    st.session_state["res_promo"] = call_openrouter(sys_p, usr_p)
+                    st.success("Berhasil!")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    if "res_promo" in st.session_state:
+        res = st.session_state["res_promo"]
+        st.subheader("🎬 Skrip Video Singkat (TikTok / Reels)")
+        st.info(res.get("script_tiktok", ""))
+        st.subheader("📲 Draf Broadcast WhatsApp Promo")
+        st.code(res.get("broadcast_wa", ""), language="text")
+
+# --- TAB 3: SEO MARKETPLACE ---
+with tab3:
+    if st.button("🎯 Execute SEO Agent", key="btn_tab3", type="primary"):
+        if not prod_name:
+            st.error("Nama produk wajib diisi!")
+        else:
+            with st.spinner("Agent melakukan keyword research..."):
+                try:
+                    sys_p = "Kamu adalah spesialis SEO Shopee dan Tokopedia. Merespon HANYA dalam format JSON valid."
+                    usr_p = f"""
+                    Produk: {prod_name}, Kategori: {prod_category}, Keunggulan: {prod_features}.
+                    Format JSON:
+                    {{
+                        "judul_seo": "Judul Produk Yang Ramah Algoritma Marketplace (Maks 100 Karakter)",
+                        "keywords": ["keyword 1", "keyword 2", "keyword 3", "keyword 4"]
+                    }}
+                    """
+                    st.session_state["res_seo"] = call_openrouter(sys_p, usr_p)
+                    st.success("Berhasil!")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    if "res_seo" in st.session_state:
+        res = st.session_state["res_seo"]
+        st.subheader("📌 Judul Optimal Shopee/Tokopedia")
+        st.code(res.get("judul_seo", ""), language="text")
+        st.subheader("🔑 Kata Kunci Utama")
+        st.write(", ".join(res.get("keywords", [])))
+
+# --- TAB 4: RISET & REKOMENDASI PRODUK ---
+with tab4:
+    if st.button("📊 Execute Product Research Agent", key="btn_tab4", type="primary"):
+        if not prod_name:
+            st.error("Nama produk wajib diisi!")
+        else:
+            with st.spinner("Agent melakukan analisis riset pasar & potensi produk..."):
+                try:
+                    sys_p = "Kamu adalah Konsultan Riset Pasar & Product Strategist E-Commerce senior. Merespon HANYA dalam format JSON valid."
+                    usr_p = f"""
+                    Produk: {prod_name}, Kategori: {prod_category}, Harga: Rp {prod_price}, Keunggulan: {prod_features}.
+                    Lakukan analisis mendalam dan berikan respon JSON dengan struktur:
+                    {{
+                        "target_audience": "Profil pembeli ideal (demografi, kebiasaan, pain points)",
+                        "usp": "Unique Selling Proposition utama yang membedakan dari pesaing",
+                        "market_potential": "Analisis potensi pasar dan posisi harga (apakah murah, mid-tier, atau premium)",
+                        "competitor_analysis": "Tantangan persaingan pasar saat ini",
+                        "product_recommendations": ["Rekomendasi ide varian/bundling 1", "Rekomendasi ide varian/bundling 2", "Rekomendasi ide varian/bundling 3"]
+                    }}
+                    """
+                    st.session_state["res_research"] = call_openrouter(sys_p, usr_p)
+                    st.success("Riset Berhasil!")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    if "res_research" in st.session_state:
+        res = st.session_state["res_research"]
+        
+        col_res1, col_res2 = st.columns(2)
+        with col_res1:
+            st.subheader("🎯 Target Pembeli Ideal")
+            st.info(res.get("target_audience", ""))
+            
+            st.subheader("💡 Unique Selling Proposition (USP)")
+            st.success(res.get("usp", ""))
+
+        with col_res2:
+            st.subheader("📈 Analisis Potensi Pasar & Harga")
+            st.write(res.get("market_potential", ""))
+            
+            st.subheader("⚔️ Analisis Persaingan Pasar")
+            st.warning(res.get("competitor_analysis", ""))
+
+        st.divider()
+        st.subheader("🎁 Rekomendasi Pengembangan / Bundling Produk")
+        for rec in res.get("product_recommendations", []):
+            st.write(f"✨ {rec}")
+
+# --- TAB 5: CS & FAQ ---
+with tab5:
+    if st.button("❓ Execute CS Agent", key="btn_tab5", type="primary"):
+        if not prod_name:
+            st.error("Nama produk wajib diisi!")
+        else:
+            with st.spinner("Agent menyusun FAQ..."):
+                try:
+                    sys_p = "Kamu adalah manajer CS e-commerce profesional. Merespon HANYA dalam format JSON valid."
+                    usr_p = f"""
+                    Produk: {prod_name}, Kategori: {prod_category}, Keunggulan: {prod_features}.
+                    Format JSON:
+                    {{
+                        "faq": [
+                            {{"tanya": "Pertanyaan 1", "jawab": "Jawaban 1"}},
+                            {{"tanya": "Pertanyaan 2", "jawab": "Jawaban 2"}},
+                            {{"tanya": "Pertanyaan 3", "jawab": "Jawaban 3"}}
+                        ]
+                    }}
+                    """
+                    st.session_state["res_faq"] = call_openrouter(sys_p, usr_p)
+                    st.success("Berhasil!")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    if "res_faq" in st.session_state:
+        res = st.session_state["res_faq"]
+        st.subheader("💬 Auto FAQ Generator")
+        for item in res.get("faq", []):
+            with st.expander(f"Q: {item.get('tanya')}"):
+                st.write(item.get("jawab"))
+
+# --- TAB 6: VISUAL PROMPT ---
+with tab6:
+    if st.button("🎨 Execute Visual Agent", key="btn_tab6", type="primary"):
+        if not prod_name:
+            st.error("Nama produk wajib diisi!")
+        else:
+            with st.spinner("Agent merancang prompt foto studio..."):
+                try:
+                    sys_p = "Kamu adalah instruktur prompt AI Gambar (Midjourney / FLUX / DALL-E). Merespon HANYA dalam format JSON valid."
+                    usr_p = f"""
+                    Produk: {prod_name}, Kategori: {prod_category}, Keunggulan: {prod_features}.
+                    Format JSON:
+                    {{
+                        "prompt_en": "Professional product studio photoshoot prompt in English, 8k resolution, photorealistic",
+                        "instruksi": "Instruksi cara memakai prompt ini di AI Generator"
+                    }}
+                    """
+                    st.session_state["res_visual"] = call_openrouter(sys_p, usr_p)
+                    st.success("Berhasil!")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    if "res_visual" in st.session_state:
+        res = st.session_state["res_visual"]
+        st.subheader("🖼️ English Studio Prompt")
+        st.code(res.get("prompt_en", ""), language="text")
+        st.caption(res.get("instruksi", ""))
