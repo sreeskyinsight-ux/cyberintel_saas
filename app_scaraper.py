@@ -1,12 +1,6 @@
 import os
 os.environ["ANONYMIZED_TELEMETRY"] = "False"  # Mencegah error telemetry Streamlit
 
-# --- PENGAMAN IMPORT PYDANTIC V1 ---
-try:
-    import pydantic.v1
-except ImportError:
-    import pydantic
-
 import streamlit as st
 from openai import OpenAI
 
@@ -97,7 +91,7 @@ if submit_btn:
                 
                 # Simulasi/Eksekusi Permintaan ke LLM (OpenRouter)
                 response = client.chat.completions.create(
-                    model="anthropic/claude-3.5-sonnet", # Bisa disesuaikan dengan model pilihan
+                    model="anthropic/claude-3.5-sonnet",
                     messages=[
                         {"role": "system", "content": "Anda adalah analis intelijen siber senior. Buat laporan investigasi yang terstruktur, tajam, dan profesional dalam format Markdown."},
                         {"role": "user", "content": f"Lakukan analisis intelijen mendalam mengenai: {target_topic}"}
