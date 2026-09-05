@@ -20,13 +20,13 @@ st.caption("Solusi e-commerce lengkap: Copywriting, SEO Marketplace, Strategi Pr
 # 2. DAFTAR MODEL OPENROUTER
 # ---------------------------------------------------------
 MODEL_OPTIONS = {
+    "Hermes 3 (Llama 3.1 405B)": "nousresearch/hermes-3-llama-3.1-405b",
+    "Hermes 3 (Llama 3.1 70B)": "nousresearch/hermes-3-llama-3.1-70b",
     "DeepSeek V3": "deepseek/deepseek-chat",
     "DeepSeek R1 (Reasoning Original)": "deepseek/deepseek-r1",
     "DeepSeek R1 Distill (Llama 70B)": "deepseek/deepseek-r1-distill-llama-70b",
-    "DeepSeek R1 Distill (Qwen 32B)": "deepseek/deepseek-r1-distill-qwen-32b",
     "Llama 3.3 (70B)": "meta-llama/llama-3.3-70b-instruct",
     "Qwen 2.5 (72B)": "qwen/qwen-2.5-72b-instruct",
-    "Hermes 3 (Llama 3.1 405B)": "nousresearch/hermes-3-llama-3.1-405b",
     "Gemini Flash 1.5": "google/gemini-flash-1.5",
     "Claude 3.5 Haiku": "anthropic/claude-3.5-haiku"
 }
@@ -60,7 +60,7 @@ if not api_key:
     st.stop()
 
 client = OpenAI(
-    base_url="[https://openrouter.ai/api/v1](https://openrouter.ai/api/v1)",
+    base_url="https://openrouter.ai/api/v1",
     api_key=api_key
 )
 
@@ -68,23 +68,26 @@ client = OpenAI(
 # 4. HELPER FUNCTION UNTUK REQUEST AI & CLEANING JSON
 # ---------------------------------------------------------
 def call_openrouter(system_prompt, user_prompt):
-    response = client.chat.completions.create(
-        model=selected_model_id,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-    )
-    raw = response.choices[0].message.content.strip()
-    
-    # Ekstraksi string JSON menggunakan Regex (Mencegah Syntax Error dari Markdown ```)
-    match = re.search(r"\{.*\}", raw, re.DOTALL)
-    if match:
-        clean_json = match.group(0)
-    else:
-        clean_json = raw
+    try:
+        response = client.chat.completions.create(
+            model=selected_model_id,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            timeout=30
+        )
+        raw = response.choices[0].message.content.strip()
+        
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if match:
+            clean_json = match.group(0)
+        else:
+            clean_json = raw
 
-    return json.loads(clean_json)
+        return json.loads(clean_json)
+    except Exception as e:
+        raise Exception(f"Gagal terhubung ke {selected_model_name}. Coba ganti model lain di sidebar (seperti DeepSeek V3 atau Gemini Flash). Detail: {e}")
 
 # ---------------------------------------------------------
 # 5. FORM INPUT UTAMA PRODUK
