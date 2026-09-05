@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Injeksi CSS Futuristik (Dark Mode, Glassmorphism, Glow Effects)
+# Injeksi CSS Futuristik dengan Kontras Teks Tombol yang Jelas
 st.markdown("""
 <style>
     /* Main Background & Font */
@@ -44,20 +44,35 @@ st.markdown("""
         margin-bottom: 25px;
     }
 
-    /* Glowing Primary Buttons */
+    /* FIX: SEMUA TOMBOL STREAMLIT PERBAIKAN HURUF & KONTRAS */
+    div.stButton > button {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 0.5px !important;
+        background-color: #1e293b !important;
+        border: 1px solid #475569 !important;
+        transition: all 0.3s ease-in-out;
+    }
+
+    div.stButton > button:hover {
+        border-color: #38bdf8 !important;
+        color: #38bdf8 !important;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+
+    /* FIX: TOMBOL UTAMA (PRIMARY) BERCAHAYA DENGAN TEKS PUTIH TEBAL */
     div.stButton > button[kind="primary"] {
         background: linear-gradient(90deg, #6366f1, #a855f7) !important;
-        color: white !important;
+        color: #ffffff !important;
         border: none !important;
-        box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
-        transition: all 0.3s ease-in-out;
-        font-weight: 600;
-        letter-spacing: 0.5px;
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
     }
     
     div.stButton > button[kind="primary"]:hover {
-        box-shadow: 0 0 25px rgba(168, 85, 247, 0.8);
+        box-shadow: 0 0 25px rgba(168, 85, 247, 0.9);
         transform: translateY(-2px);
+        color: #ffffff !important;
     }
 
     /* Tab Styling */
@@ -172,7 +187,7 @@ with st.container():
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 6. INTEGRASI AGEN AI BERBASIS TAB (DENGAN TAB RISET DITAMBAHKAN)
+# 6. INTEGRASI AGEN AI BERBASIS TAB
 # ---------------------------------------------------------
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📝 Copywriting & WA", 
@@ -219,7 +234,7 @@ with tab1:
         
         wa_message = f"Halo {store_name}, saya mau pesan:\n\n*Nama Produk:* {prod_name}\n*Harga:* Rp {prod_price:,}\n\nApakah stok masih tersedia?"
         wa_url = f"https://wa.me/{wa_number}?text={urllib.parse.quote(wa_message)}"
-        st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background: linear-gradient(90deg, #10b981, #059669); color:white; border:none; padding:12px 24px; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);">🚀 Checkout via WhatsApp</button></a>', unsafe_allow_html=True)
+        st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background: linear-gradient(90deg, #10b981, #059669); color:#ffffff; border:none; padding:12px 24px; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); font-size: 1rem;">🚀 Checkout via WhatsApp</button></a>', unsafe_allow_html=True)
 
 # --- TAB 2: MARKETING STRATEGY ---
 with tab2:
@@ -279,7 +294,7 @@ with tab3:
         st.subheader("🔑 Kata Kunci Utama")
         st.write(", ".join(res.get("keywords", [])))
 
-# --- TAB 4: RISET & REKOMENDASI PRODUK (BARU) ---
+# --- TAB 4: RISET & REKOMENDASI PRODUK ---
 with tab4:
     if st.button("📊 Execute Product Research Agent", key="btn_tab4", type="primary"):
         if not prod_name:
