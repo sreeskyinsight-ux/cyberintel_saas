@@ -1,3 +1,8 @@
+import os
+os.environ["ANONYMIZED_TELEMETRY"] = "false"
+# Mencegah error Pydantic v1 fallback di Python baru
+import pydantic.v1
+
 import streamlit as st
 from openai import OpenAI
 import datetime
